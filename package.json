@@ -1,0 +1,14 @@
+{
+  "name": "faa-ground-stop-2026",
+  "private": true,
+  "type": "module",
+  "description": "Builds the ground stop map from data/ (see README).",
+  "scripts": {
+    "map": "node scripts/build_map.mjs"
+  },
+  "dependencies": {
+    "d3-geo": "3.1.1",
+    "topojson-client": "3.1.0",
+    "us-atlas": "3.0.1"
+  }
+}

@@ -1,0 +1,55 @@
+name: Release
+
+# Push a tag like v1.0.0 to publish a release, or run manually from the Actions tab.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (e.g. v1.0.0). Created from the current branch if it doesn't exist."
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Rebuild the chart from data/
+        run: python3 scripts/build_chart.py
+
+      - name: Rebuild the map from data/
+        run: |
+          npm ci
+          node scripts/build_map.mjs
+
+      - name: Package assets
+        run: |
+          mkdir -p dist
+          zip -r "dist/faa-ground-stop-2026-data.zip" data LICENSE
+          cp site/ground-stop-chart.html site/ground-stop-map.html dist/
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$TAG" dist/* \
+            --title "$TAG" \
+            --generate-notes \
+            --target "${GITHUB_SHA}"
